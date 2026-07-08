@@ -48,5 +48,8 @@ dist/
 # Jupyter
 .ipynb_checkpoints/
 
+# Session handover notes
+session/
+
 # Claude worktrees
 .claude/worktrees/
