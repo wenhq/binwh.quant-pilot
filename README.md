@@ -1,6 +1,6 @@
 # binwh.quant-pilot
 
-个人量化投研学习项目，代码由 AI 辅助生成。
+> **个人量化投研学习项目 · 代码由 AI 辅助生成**
 
 - **后端**：FastAPI + SQLAlchemy async + MySQL + JWT
 - **前端**：Vue 3 + TypeScript + Ant Design Vue + lightweight-charts
