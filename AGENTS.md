@@ -85,3 +85,7 @@ All config via `.env` (excluded from git). See `.env.example` for template.
 ## Tests
 
 16 pytest files covering auth, data sources, importer, registry, universe, indicators, market regime (features/reduce/clustering/classifier/evaluation/persist/pipeline), models. Async mode via `pytest-asyncio`.
+
+## Agent Preferences
+
+- Commit messages should be written in **Chinese**
