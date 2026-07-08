@@ -48,6 +48,9 @@ dist/
 # Jupyter
 .ipynb_checkpoints/
 
+# Data exports from notebooks
+exports/
+
 # Session handover notes
 session/
 
