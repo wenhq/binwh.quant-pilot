@@ -1,4 +1,4 @@
-# binwh.QuantPilot
+# binwh.quant-pilot
 
 量化投研平台 — 行情采集、技术指标、市场状态识别（ML）、用户认证。
 
