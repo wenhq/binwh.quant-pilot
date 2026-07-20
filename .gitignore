@@ -51,8 +51,8 @@ dist/
 # Data exports from notebooks
 exports/
 
-# Session handover notes
-session/
+# Local agent memory (handover notes, preferences)
+memory/
 
 # Claude worktrees
 .claude/worktrees/
