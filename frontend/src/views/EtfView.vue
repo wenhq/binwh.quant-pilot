@@ -65,8 +65,8 @@ const columns = [
       :pagination="{ pageSize: 20 }"
       size="middle"
       bordered
-      expandable={{
-        expandedRowRender: (record: any) => {
+      :expandable="{
+        expandedRowRender: (record) => {
           if (expandedLoading.value.has(record.code)) {
             return h('div', { style: { padding: '24px', textAlign: 'center' } }, [
               h(Spin)
@@ -77,8 +77,8 @@ const columns = [
             h(KlineChart, { klines })
           ])
         },
-        onExpand: (expanded: boolean, record: any) => handleExpand(record.code, record.code),
-      }}
+        onExpand: (expanded, record) => handleExpand(record.code, record.code),
+      }"
     />
   </Spin>
 </template>

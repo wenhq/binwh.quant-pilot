@@ -33,14 +33,14 @@ async function handleRegister() {
 <template>
   <div class="register-page">
     <a-card title="QuantPilot 注册" style="width: 400px; margin: 0 auto">
-      <a-form layout="vertical" @finish="handleRegister">
-        <a-form-item label="用户名" required>
+      <a-form layout="vertical" @submit.prevent="handleRegister">
+        <a-form-item label="用户名" name="username" required>
           <a-input v-model:value="formData.username" placeholder="请输入用户名" size="large" />
         </a-form-item>
-        <a-form-item label="密码" required>
+        <a-form-item label="密码" name="password" required>
           <a-input-password v-model:value="formData.password" placeholder="请输入密码" size="large" />
         </a-form-item>
-        <a-form-item label="确认密码" required>
+        <a-form-item label="确认密码" name="confirmPassword" required>
           <a-input-password v-model:value="formData.confirmPassword" placeholder="请再次输入密码" size="large" />
         </a-form-item>
         <a-form-item>

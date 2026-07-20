@@ -1,5 +1,4 @@
 import api from './index'
-import type { Kline } from '../types/market'
 
 export async function getEtfList() {
   const { data } = await api.get('/data/etfs')

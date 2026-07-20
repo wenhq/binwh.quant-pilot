@@ -55,13 +55,13 @@ watch([assetType, code, adjustMode], loadData)
     <template #extra>
       <Row :gutter="8" align="middle">
         <Col>
-          <Select :value="assetType" @change="(v: string) => assetType = v" :options="assetOptions" style="width:90px" size="small" />
+          <Select :value="assetType" @change="(v) => assetType = v" :options="assetOptions" style="width:90px" size="small" />
         </Col>
         <Col>
           <a-input v-model:value="code" placeholder="代码" style="width:100px" size="small" />
         </Col>
         <Col>
-          <Select :value="adjustMode" @change="(v: string) => adjustMode = v" :options="adjustOptions" style="width:100px" size="small" />
+          <Select :value="adjustMode" @change="(v) => adjustMode = v" :options="adjustOptions" style="width:100px" size="small" />
         </Col>
       </Row>
     </template>
