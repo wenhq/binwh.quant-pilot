@@ -9,7 +9,7 @@
 | `python/` | Python 基础库：python 语法、numpy、pandas、scipy |
 | `data/` | 数据源接入与导出：akshare 等 |
 | `quant/` | 量化工具库：backtrader、btframe、pyfolio、empyrical |
-| `models/` | 机器学习模型训练与验证（空，待补充） |
+| `research/` | 研究分析：策略思路、择时建模、因子实验等 |
 | `plots/` | 可视化：seaborn 等 |
 | `assets/` | 金融产品分析：期权等 |
 
