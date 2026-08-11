@@ -28,6 +28,6 @@ app.add_middleware(
 
 app.include_router(health, prefix="/api")
 app.include_router(data, prefix="/api")
-app.include_router(market_regime, prefix="/api")
 app.include_router(auth, prefix="/api")
 app.include_router(indicators, prefix="/api")
+app.include_router(market_regime, prefix="/api")

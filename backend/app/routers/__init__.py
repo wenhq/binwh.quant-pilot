@@ -1,7 +1,11 @@
 from app.routers.health import router as health
 from app.routers.data import router as data
-from app.routers.market_regime import router as market_regime
 from app.routers.auth import router as auth
 from app.routers.indicators import router as indicators
+
+try:
+    from app.routers.market_regime import router as market_regime
+except ImportError:
+    market_regime = None  # type: ignore[assignment,misc]
 
 __all__ = ["health", "data", "market_regime", "auth", "indicators"]

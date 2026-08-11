@@ -1,6 +1,9 @@
 """market_regime API — 训练触发 + 状态查询.
 
 仿 routers/data.py 的后台任务模式 (asyncio.create_task + AsyncSessionLocal).
+
+注意：pipeline 的 import 延迟到训练函数内执行 —— 查询接口不依赖 hmmlearn，
+未安装 C++ Build Tools 的环境也能正常查询历史状态。
 """
 from __future__ import annotations
 
@@ -11,18 +14,21 @@ from sqlalchemy import select
 
 from app.database import AsyncSessionLocal
 from app.models import RegimeRun, RegimeState
-from app.services.market_regime.pipeline import run_all_markets, run_pipeline
 
 router = APIRouter(prefix="/market_regime", tags=["market_regime"])
 _bg_tasks: dict[str, asyncio.Task] = {}
 
 
 async def _run_bg(market: str) -> None:
+    from app.services.market_regime.pipeline import run_pipeline
+
     async with AsyncSessionLocal() as s:
         await run_pipeline(s, market)
 
 
 async def _run_all_bg() -> None:
+    from app.services.market_regime.pipeline import run_all_markets
+
     await run_all_markets(AsyncSessionLocal)
 
 
@@ -39,6 +45,8 @@ async def train_market(market: str, background: bool = True):
             "hint": f"GET /api/market_regime/runs/{market}",
         }
     async with AsyncSessionLocal() as s:
+        from app.services.market_regime.pipeline import run_pipeline
+
         res = await run_pipeline(s, market)
     if not res.success:
         raise HTTPException(status_code=500, detail=res.error)
@@ -57,6 +65,8 @@ async def train_all(background: bool = True):
     if background:
         _bg_tasks["train_all"] = asyncio.create_task(_run_all_bg())
         return {"status": "started", "hint": "GET /api/market_regime/runs/A"}
+    from app.services.market_regime.pipeline import run_all_markets
+
     results = await run_all_markets(AsyncSessionLocal)
     return [
         {

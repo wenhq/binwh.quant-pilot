@@ -14,8 +14,8 @@ const expandedLoading = ref<Set<number>>(new Set())
 async function loadEtfs() {
   loading.value = true
   try {
-    const { data } = await getEtfList()
-    etfs.value = data.etfs || []
+    const resp = await getEtfList()
+    etfs.value = resp?.etfs || []
   } catch (e: any) {
     message.error(e?.response?.data?.detail || '加载 ETF 列表失败')
   } finally {
@@ -33,8 +33,8 @@ async function handleExpand(etfCode: string, etfIndex: number) {
   expandedKeys.value = new Set(expandedKeys.value)
   expandedLoading.value.add(etfIndex)
   try {
-    const { data } = await getEtfKlines(etfCode)
-    expandedKlines.value.set(etfIndex, data.data || [])
+    const resp = await getEtfKlines(etfCode)
+    expandedKlines.value.set(etfIndex, resp?.data || [])
   } catch {
     message.error(`加载 ${etfCode} K 线失败`)
     expandedKeys.value.delete(etfIndex)
@@ -65,8 +65,8 @@ const columns = [
       :pagination="{ pageSize: 20 }"
       size="middle"
       bordered
-      expandable={{
-        expandedRowRender: (record: any) => {
+      :expandable="{
+        expandedRowRender: (record) => {
           if (expandedLoading.value.has(record.code)) {
             return h('div', { style: { padding: '24px', textAlign: 'center' } }, [
               h(Spin)
@@ -77,8 +77,8 @@ const columns = [
             h(KlineChart, { klines })
           ])
         },
-        onExpand: (expanded: boolean, record: any) => handleExpand(record.code, record.code),
-      }}
+        onExpand: (expanded, record) => handleExpand(record.code, record.code),
+      }"
     />
   </Spin>
 </template>

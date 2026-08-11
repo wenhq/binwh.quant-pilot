@@ -1,8 +1,8 @@
 import api from './index'
 import type { RegimeResponse, KlineResponse } from '../types/market'
 
-export async function getRegimeStates(market: string): Promise<RegimeResponse> {
-  const { data } = await api.get(`/market_regime/states/${market}`)
+export async function getRegimeStates(market: string, limit = 2000): Promise<RegimeResponse> {
+  const { data } = await api.get(`/market_regime/states/${market}`, { params: { limit } })
   return data
 }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, HistogramData } from 'lightweight-charts'
+import { createChart, ColorType, CandlestickSeries, HistogramSeries, IChartApi, createSeriesMarkers } from 'lightweight-charts'
 import type { Kline } from '../types/market'
 
 const props = defineProps<{
@@ -10,21 +10,20 @@ const props = defineProps<{
 
 const container = ref<HTMLDivElement | null>(null)
 const chart = ref<IChartApi | null>(null)
-const candleSeries = ref<ISeriesApi<'Candlestick'> | null>(null)
 
 const STATE_COLORS: Record<number, string> = {
   0: 'rgba(0, 200, 0, 0.12)',
   1: 'rgba(255, 0, 0, 0.12)',
 }
 
-function buildBands(): HistogramData[] {
+function buildBands() {
   if (!props.bands || props.bands.length === 0) return []
   const stateByDate = new Map<string, number>()
   for (const b of props.bands) {
     stateByDate.set(b.from, b.state)
     stateByDate.set(b.to, b.state)
   }
-  const result: HistogramData[] = []
+  const result: Array<{ time: string; value: number; color: string }> = []
   for (const k of props.klines) {
     const state = stateByDate.get(k.trade_date)
     if (state !== undefined) {
@@ -46,7 +45,7 @@ function renderChart() {
     width: container.value.clientWidth,
     height: 420,
     layout: {
-      background: { type: ColorType.Solid, color: '#ffffff' },
+      background: { color: '#ffffff' },
       textColor: '#333',
     },
     grid: {
@@ -57,13 +56,13 @@ function renderChart() {
     timeScale: { timeVisible: true, secondsVisible: false },
   })
 
-  chart.value.addHistogramSeries({
+  chart.value.addSeries(HistogramSeries, {
     color: 'rgba(128,128,128,0.08)',
     priceFormat: { type: 'volume' },
     priceScaleId: 'band',
   }).setData(buildBands())
 
-  candleSeries.value = chart.value.addCandlestickSeries({
+  const candleSeries = chart.value.addSeries(CandlestickSeries, {
     upColor: '#26a69a',
     downColor: '#ef5350',
     borderUpColor: '#26a69a',
@@ -71,7 +70,7 @@ function renderChart() {
     wickUpColor: '#26a69a',
     wickDownColor: '#ef5350',
   })
-  candleSeries.value.setData(
+  candleSeries.setData(
     props.klines.map((k) => ({
       time: k.trade_date,
       open: k.open,
@@ -81,23 +80,15 @@ function renderChart() {
     }))
   )
 
-  props.klines.forEach((k) => {
+  const markers = props.klines.map(k => {
     if (k.close > k.open) {
-      candleSeries.value!.setMark({
-        time: k.trade_date,
-        position: 'belowBar',
-        shape: 'arrowUp',
-        color: '#26a69a',
-      })
+      return { time: k.trade_date, position: 'belowBar' as const, shape: 'arrowUp' as const, color: '#26a69a' }
     } else if (k.close < k.open) {
-      candleSeries.value!.setMark({
-        time: k.trade_date,
-        position: 'aboveBar',
-        shape: 'arrowDown',
-        color: '#ef5350',
-      })
+      return { time: k.trade_date, position: 'aboveBar' as const, shape: 'arrowDown' as const, color: '#ef5350' }
     }
-  })
+    return null
+  }).filter(Boolean)
+  createSeriesMarkers(candleSeries, markers as any[])
 }
 
 let ro: ResizeObserver | null = null

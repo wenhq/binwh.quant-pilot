@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import {
-  createChart, ColorType, IChartApi,
-  type CandlestickData, type LineData, type HistogramData, type SeriesMarker,
+  createChart, ColorType, CandlestickSeries, HistogramSeries, LineSeries, createSeriesMarkers,
 } from 'lightweight-charts'
 import type { IndicatorData } from '../api/indicators'
 
@@ -16,9 +15,9 @@ const props = defineProps<{
 const container = ref<HTMLDivElement | null>(null)
 const macdContainer = ref<HTMLDivElement | null>(null)
 const rsiContainer = ref<HTMLDivElement | null>(null)
-let mainChart: IChartApi | null = null
-let macdChart: IChartApi | null = null
-let rsiChart: IChartApi | null = null
+let mainChart: ReturnType<typeof createChart> | null = null
+let macdChart: ReturnType<typeof createChart> | null = null
+let rsiChart: ReturnType<typeof createChart> | null = null
 let ro: ResizeObserver | null = null
 
 function renderMain() {
@@ -28,13 +27,13 @@ function renderMain() {
   mainChart = createChart(container.value, {
     width: container.value.clientWidth,
     height: 420,
-    layout: { background: { type: ColorType.Solid, color: '#ffffff' }, textColor: '#333' },
+    layout: { background: { color: '#ffffff' }, textColor: '#333' },
     grid: { vertLines: { color: '#f0f0f0' }, horzLines: { color: '#f0f0f0' } },
     crosshair: { mode: 1 },
     timeScale: { timeVisible: true, secondsVisible: false },
   })
 
-  const candle = mainChart.addCandlestickSeries({
+  const candle = mainChart.addSeries(CandlestickSeries, {
     upColor: '#26a69a', downColor: '#ef5350',
     borderUpColor: '#26a69a', borderDownColor: '#ef5350',
     wickUpColor: '#26a69a', wickDownColor: '#ef5350',
@@ -45,7 +44,7 @@ function renderMain() {
     }))
   )
 
-  const volume = mainChart.addHistogramSeries({
+  const volume = mainChart.addSeries(HistogramSeries, {
     color: 'rgba(100,181,246,0.3)',
     priceFormat: { type: 'volume' },
     priceScaleId: 'vol',
@@ -56,24 +55,24 @@ function renderMain() {
   volume.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } })
 
   if (props.showBoll) {
-    const upper = mainChart.addLineSeries({ color: 'rgba(255,152,0,0.6)', lineWidth: 1 })
-    const mid = mainChart.addLineSeries({ color: 'rgba(156,39,176,0.6)', lineWidth: 1, lineStyle: 2 })
-    const lower = mainChart.addLineSeries({ color: 'rgba(255,152,0,0.6)', lineWidth: 1 })
+    const upper = mainChart.addSeries(LineSeries, { color: 'rgba(255,152,0,0.6)', lineWidth: 1 })
+    const mid = mainChart.addSeries(LineSeries, { color: 'rgba(156,39,176,0.6)', lineWidth: 1, lineStyle: 2 })
+    const lower = mainChart.addSeries(LineSeries, { color: 'rgba(255,152,0,0.6)', lineWidth: 1 })
 
-    upper.setData(props.data.filter(d => d.boll_upper != null).map(d => ({ time: d.trade_date, value: d.boll_upper! })) as LineData[])
-    mid.setData(props.data.filter(d => d.boll_mid != null).map(d => ({ time: d.trade_date, value: d.boll_mid! })) as LineData[])
-    lower.setData(props.data.filter(d => d.boll_lower != null).map(d => ({ time: d.trade_date, value: d.boll_lower! })) as LineData[])
+    upper.setData(props.data.filter(d => d.boll_upper != null).map(d => ({ time: d.trade_date, value: d.boll_upper! })))
+    mid.setData(props.data.filter(d => d.boll_mid != null).map(d => ({ time: d.trade_date, value: d.boll_mid! })))
+    lower.setData(props.data.filter(d => d.boll_lower != null).map(d => ({ time: d.trade_date, value: d.boll_lower! })))
   }
 
-  const markers: SeriesMarker<Time>[] = []
-  for (const d of props.data) {
+  const markers = props.data.map((d) => {
     if (d.close > d.open) {
-      markers.push({ time: d.trade_date as Time, position: 'belowBar', shape: 'arrowUp', color: '#26a69a' })
+      return { time: d.trade_date, position: 'belowBar' as const, shape: 'arrowUp' as const, color: '#26a69a' }
     } else if (d.close < d.open) {
-      markers.push({ time: d.trade_date as Time, position: 'aboveBar', shape: 'arrowDown', color: '#ef5350' })
+      return { time: d.trade_date, position: 'aboveBar' as const, shape: 'arrowDown' as const, color: '#ef5350' }
     }
-  }
-  candle.setMarkers(markers)
+    return null
+  }).filter(Boolean)
+  createSeriesMarkers(candle, markers as any[])
 }
 
 function renderMACD() {
@@ -83,13 +82,13 @@ function renderMACD() {
   macdChart = createChart(macdContainer.value, {
     width: macdContainer.value.clientWidth,
     height: 150,
-    layout: { background: { type: ColorType.Solid, color: '#fafafa' }, textColor: '#666' },
+    layout: { background: { color: '#fafafa' }, textColor: '#666' },
     grid: { vertLines: { color: '#f0f0f0' }, horzLines: { color: '#f0f0f0' } },
     timeScale: { timeVisible: true, secondsVisible: false },
   })
 
-  const hist = macdChart.addHistogramSeries({})
-  const histData: HistogramData[] = []
+  const hist = macdChart.addSeries(HistogramSeries, {})
+  const histData = []
   for (const d of props.data) {
     if (d.macd_hist != null) {
       histData.push({
@@ -100,10 +99,10 @@ function renderMACD() {
   }
   hist.setData(histData)
 
-  const dif = macdChart.addLineSeries({ color: '#2196f3', lineWidth: 1 })
-  const dea = macdChart.addLineSeries({ color: '#ff9800', lineWidth: 1 })
-  dif.setData(props.data.filter(d => d.macd_dif != null).map(d => ({ time: d.trade_date, value: d.macd_dif! })) as LineData[])
-  dea.setData(props.data.filter(d => d.macd_dea != null).map(d => ({ time: d.trade_date, value: d.macd_dea! })) as LineData[])
+  const dif = macdChart.addSeries(LineSeries, { color: '#2196f3', lineWidth: 1 })
+  const dea = macdChart.addSeries(LineSeries, { color: '#ff9800', lineWidth: 1 })
+  dif.setData(props.data.filter(d => d.macd_dif != null).map(d => ({ time: d.trade_date, value: d.macd_dif! })))
+  dea.setData(props.data.filter(d => d.macd_dea != null).map(d => ({ time: d.trade_date, value: d.macd_dea! })))
 }
 
 function renderRSI() {
@@ -113,19 +112,19 @@ function renderRSI() {
   rsiChart = createChart(rsiContainer.value, {
     width: rsiContainer.value.clientWidth,
     height: 120,
-    layout: { background: { type: ColorType.Solid, color: '#fafafa' }, textColor: '#666' },
+    layout: { background: { color: '#fafafa' }, textColor: '#666' },
     grid: { vertLines: { color: '#f0f0f0' }, horzLines: { color: '#f0f0f0' } },
     timeScale: { timeVisible: true, secondsVisible: false },
   })
 
-  const rsi = rsiChart.addLineSeries({ color: '#9c27b0', lineWidth: 2 })
-  rsi.setData(props.data.filter(d => d.rsi != null).map(d => ({ time: d.trade_date, value: d.rsi! })) as LineData[])
+  const rsi = rsiChart.addSeries(LineSeries, { color: '#9c27b0', lineWidth: 2 })
+  rsi.setData(props.data.filter(d => d.rsi != null).map(d => ({ time: d.trade_date, value: d.rsi! })))
 
-  const upper = rsiChart.addLineSeries({ color: 'rgba(239,83,80,0.3)', lineWidth: 1, lineStyle: 2 })
-  const lower = rsiChart.addLineSeries({ color: 'rgba(38,166,154,0.3)', lineWidth: 1, lineStyle: 2 })
+  const upper = rsiChart.addSeries(LineSeries, { color: 'rgba(239,83,80,0.3)', lineWidth: 1, lineStyle: 2 })
+  const lower = rsiChart.addSeries(LineSeries, { color: 'rgba(38,166,154,0.3)', lineWidth: 1, lineStyle: 2 })
   const dates = props.data.map(d => d.trade_date)
-  upper.setData(dates.map(t => ({ time: t, value: 70 })) as LineData[])
-  lower.setData(dates.map(t => ({ time: t, value: 30 })) as LineData[])
+  upper.setData(dates.map(t => ({ time: t, value: 70 })))
+  lower.setData(dates.map(t => ({ time: t, value: 30 })))
 }
 
 function renderAll() {
