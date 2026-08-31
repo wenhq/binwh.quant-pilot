@@ -1,14 +1,16 @@
 # Docs 索引
 
-本目录存放项目设计文档。接手时建议阅读顺序：**数据库 → 后端接口 → 前端设计 → plans（按需）**。
+本目录存放项目设计文档。接手时建议阅读顺序：**需求说明 → 数据库设计 → 接口设计 → 详细设计（含前端）→ 部署文档 → plans（按需）**。
 
-## 核心文档
+## 设计五件套（2026-08-31 全套重写）
 
 | 文档 | 内容 |
 |---|---|
-| [database-design.md](database-design.md) | 数据库表结构、ER 关系、索引设计 |
-| [api-design.md](api-design.md) | 后端 RESTful 接口清单（auth/data/indicators/market_regime） |
-| [frontend-design.md](frontend-design.md) | 前端架构、目录结构、认证流程、图表组件 |
+| [requirements.md](requirements.md) | 系统级需求说明：FR 51 条 / NFR 17 条 / 验收标准 AC-01~12 |
+| [database-design.md](database-design.md) | 数据库 14 表结构、ER 关系、索引与幂等写库设计 |
+| [api-design.md](api-design.md) | 后端 RESTful 接口 22 端点规格、鉴权矩阵、前端 axios 契约 |
+| [detailed-design.md](detailed-design.md) | 模块内部实现 + 前端设计 + KDD 12 条 + 技术债 TD-01~12（取代已删除的 frontend-design.md） |
+| [deployment.md](deployment.md) | Docker Compose 自部署手册：双容器 + 阿里云 RDS、验收清单、故障排查 |
 
 ## 功能方案（按日期倒序）
 

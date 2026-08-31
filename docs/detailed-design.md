@@ -39,7 +39,7 @@ backend/
 │       └── scheduler.py         # 进程内每日同步调度器（§3.12 / §6）
 ├── scripts/                     # run_import / run_regime / backfill_indicators / fix_etf_history（§3.13）
 ├── tests/                       # 18 文件 / 131 用例 + conftest 隔离（§5.5）
-├── pyproject.toml               # 依赖权威清单（requirements.txt 已陈旧，见 TD-07）
+├── pyproject.toml               # 依赖权威清单（requirements.txt 已删除，uv.lock 与其同步）
 └── Dockerfile                   # 两阶段构建（§7）
 
 frontend/
@@ -779,8 +779,8 @@ schema 由 `init_db()` 的 `create_all` 直建，只建缺失表、不改既有�
 **TD-06 国信客户端禁用 TLS 证书校验（影响：中 / 优先级：中）**
 `guosen_client._ssl_context` 设 `CERT_NONE` + `SECLEVEL=0`（兼容旧服务器），意味着该通道可被中间人；仅传输行情数据且 key 随 URL 发送，风险限于数据源污染与 key 泄露面扩大。建议：默认开启校验，仅对确认的旧服务器以配置开关降级。
 
-**TD-07 依赖清单三处不一致：requirements.txt / uv.lock / .env.docker 陈旧（影响：高 / 优先级：高）**
-`requirements.txt` 缺 aiomysql、akshare、baostock、scikit-learn、hmmlearn、passlib 等（按它装出的环境无法连 MySQL、无法跑管线）；`uv.lock` 缺 auth 依赖（backend Dockerfile 注释明确弃用，构建走 tomllib+pip）；`backend/.env.docker` 仍是 asyncmy + `mysql` 主机的旧形态。pyproject.toml 是唯一权威。建议：删除或重生成 uv.lock 与 requirements.txt（`pip freeze` 对齐 venv）、更新 .env.docker，消除"按错清单装环境"的坑（database-design 1.4 同步记录）。
+**TD-07 依赖清单漂移（影响：高 / 优先级：高）——已于 2026-08-31 处置**
+原状：`requirements.txt` 缺 aiomysql、akshare、baostock、scikit-learn、hmmlearn、passlib 等（按它装出的环境无法连 MySQL、无法跑管线）；`uv.lock` 缺 auth 依赖；`backend/.env.docker`（未跟踪的本地遗留文件）仍是 asyncmy + `mysql` 主机旧形态。处置：删除 `requirements.txt` 与本地 `.env.docker`；`uv lock` 重生成（aiomysql 0.3.2 + auth 全家桶入锁，asyncmy 移出）；`pyproject.toml` 成为唯一权威，镜像构建走 tomllib 提取路线不受影响（database-design 1.4 同步更新）。
 
 **TD-08 `routers/data.py::sync_stock` 逐行 `session.merge` upsert（影响：低 / 优先级：低）**
 与 importer 的批量 ODKU 路径并存且更慢（每行一次 SELECT+WRITE 往返），且该 handler 自带取数/注册逻辑，违反 router 不写业务的分层约定（§2.2）。建议：改调 `importer._import_one`，handler 只留参数与响应。

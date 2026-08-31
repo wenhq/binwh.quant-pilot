@@ -201,7 +201,7 @@ docker compose ps
 事实核查（以代码为准）：
 
 1. 真实的建表入口是 `backend/app/database.py::init_db()`：`from app import models` 注册全部模型后执行 `Base.metadata.create_all`；它在 **FastAPI lifespan 启动时自动调用**（`backend/app/main.py`），即 `docker compose up -d` 后 backend 首次成功启动时就完成了建表（只创建缺失的表，已有的表不动）。
-2. **alembic 当前不可用**：`backend/alembic/` 目录只有一个空的 `__init__.py`，没有 `alembic.ini`、`env.py` 和 `versions/` 迁移脚本；`alembic` 也不在 `pyproject.toml` 依赖里（`backend/requirements.txt` 中的 `alembic==1.13.3` 是历史遗留，镜像构建走 pyproject → tomllib 路线，不读 requirements.txt，`.dockerignore` 还显式排除了 `alembic/` 与 `requirements.txt`）。因此在服务器上、镜像内、本地 venv 里执行 `alembic upgrade head` 都会失败，不要尝试。
+2. **alembic 当前不可用**：`backend/alembic/` 目录只有一个空的 `__init__.py`，没有 `alembic.ini`、`env.py` 和 `versions/` 迁移脚本；`alembic` 也不在 `pyproject.toml` 依赖里（历史上仅出现在已删除的 `backend/requirements.txt` 中；镜像构建走 pyproject → tomllib 路线，`.dockerignore` 还显式排除了 `alembic/`）。因此在服务器上、镜像内、本地 venv 里执行 `alembic upgrade head` 都会失败，不要尝试。
 3. 如需在启动 backend 之前**手动预建 schema**（例如想提前确认 RDS 账号具备建表权限），在本地开发机上执行（backend/.env 指向同一 RDS，见 3.3）：
 
 ```bash
@@ -361,7 +361,7 @@ ssh -L 8080:127.0.0.1:80 <用户名>@<服务器IP>
 | L-4 | 仅回环发布 | 公网/局域网访问需隧道或改映射，改映射后 http 明文 + 单 JWT 密钥防护，需自行评估 |
 | L-5 | backend 启动强依赖 RDS 可达（lifespan 内 `init_db`） | RDS 不可达时容器重启循环自愈，期间整个站点不可用；建议 RDS 与服务器同地域并优先走内网地址 |
 | L-6 | local-db 模式下 backend 与 mysql 无启动编排依赖 | mysql 首次初始化期间 backend 会重启循环数轮，自愈（见第 8 节） |
-| L-7 | `backend/requirements.txt` 与 `pyproject.toml` 漂移（前者缺 aiomysql/akshare 等，且含历史 alembic 条目） | 镜像构建只认 pyproject；**不要**按 requirements.txt 手工装生产环境 |
+| L-7 | **已处置**（2026-08-31）：原 `backend/requirements.txt` 与 pyproject 漂移（缺 aiomysql/akshare 等），已删除该文件并重生成 `uv.lock` | 依赖以 `backend/pyproject.toml` 为唯一权威；镜像构建只认 pyproject；本地环境按 pyproject/uv.lock 安装 |
 | L-8 | `GET /api/health` 仅探活进程，不探数据库 | backend healthy 不代表 RDS 连通正常；连库问题看 backend 日志（Q2/Q4） |
 
 ## 12. 变更日志

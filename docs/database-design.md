@@ -51,13 +51,13 @@ DATABASE_URL=mysql+aiomysql://user:password@your-rds-host.mysql.rds.aliyuncs.com
 
 ### 1.4 驱动名的事实核查
 
-仓库内存在三处驱动表述，**运行时以 aiomysql 为准**：
+仓库内各处驱动表述（2026-08-31 已全部对齐），**运行时以 aiomysql 为准**：
 
 | 位置 | 表述 | 判定 |
 |------|------|------|
 | `backend/.env` | `mysql+aiomysql://...` | **实际生效** |
 | venv 已安装包 | aiomysql 0.3.2 + PyMySQL | **实际运行时** |
-| `backend/requirements.txt` | 未声明 aiomysql（仅 aiosqlite） | **部署缺口**：按 requirements.txt 全新装环境将无法以 aiomysql 连 MySQL，需补 `aiomysql` 条目 |
+| `backend/pyproject.toml` + `uv.lock` | `aiomysql>=0.3.2`（uv.lock 2026-08-31 重生成同步） | **唯一权威清单**（陈旧 requirements.txt 同日删除） |
 | `backend/app/config.py` 默认值 | `mysql+aiomysql://...` | 已修正为 aiomysql（此前为 asyncmy 遗留默认值） |
 | `docs/requirements.md` §5.1 | "MySQL（aiomysql 驱动）" | 已与运行时对齐 |
 

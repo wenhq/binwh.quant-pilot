@@ -8,7 +8,7 @@ backend/          # FastAPI + SQLAlchemy async + MySQL
     main.py       # FastAPI 入口 + lifespan（调度器）
     config.py     # Pydantic Settings（读取 .env）
     database.py   # 异步引擎 + 会话
-    models/       # 10 张 SQLAlchemy ORM 表
+    models/       # 14 张 SQLAlchemy ORM 表
     routers/      # health, auth, data, indicators, market_regime
     services/
       auth/       # JWT httpOnly Cookie + BCrypt
@@ -17,6 +17,7 @@ backend/          # FastAPI + SQLAlchemy async + MySQL
       market_regime/ # PCA → HMM → LogisticRegression 管线
       scheduler.py  # 每日 15:05 CST 同步
 frontend/         # Vue 3 + TypeScript + Ant Design Vue 4
+docker-compose.yml # 双容器部署：frontend(nginx) + backend，MySQL 外置阿里云 RDS
 notebooks/        # Jupyter 学习笔记（Python → 量化库 → 期权 → 可视化）
 docs/             # 设计文档（见下方索引）
 memory/           # Agent 本地记忆（不入 git）
@@ -28,15 +29,17 @@ memory/           # Agent 本地记忆（不入 git）
 
 | 文档 | 内容 |
 |---|---|
+| [`docs/requirements.md`](docs/requirements.md) | 系统级需求说明（FR / NFR / 验收标准） |
 | [`docs/database-design.md`](docs/database-design.md) | 数据库表结构、ER 关系、索引设计 |
 | [`docs/api-design.md`](docs/api-design.md) | 后端 RESTful 接口清单（auth / data / indicators / market_regime） |
-| [`docs/frontend-design.md`](docs/frontend-design.md) | 前端架构、目录结构、认证流程、图表组件 |
+| [`docs/detailed-design.md`](docs/detailed-design.md) | 模块内部实现 + 前端设计 + KDD 与技术债（取代旧 frontend-design.md） |
+| [`docs/deployment.md`](docs/deployment.md) | Docker Compose 自部署手册 |
 | [`docs/plans/`](docs/plans/) | 按日期编号的功能方案（需求 + 决策 + 实现单元） |
 | [`docs/brainstorms/`](docs/brainstorms/) | 早期需求头脑风暴 |
 
 ## 数据库
 
-10 张表：users, stocks, stock_daily_klines, indices, index_daily_klines, etfs, etf_daily_klines, funds, fund_daily_klines, instruments, indicator_values, regime_runs, regime_states, import_errors
+14 张表：users, stocks, stock_daily_klines, indices, index_daily_klines, etfs, etf_daily_klines, funds, fund_daily_klines, instruments, indicator_values, regime_runs, regime_states, import_errors
 
 详见 [`docs/database-design.md`](docs/database-design.md)。
 
@@ -48,7 +51,7 @@ memory/           # Agent 本地记忆（不入 git）
 
 ## 配置
 
-所有配置走 `.env`（不入 git）。模板见 `.env.example`。
+所有配置走 `.env`（不入 git）。模板：根目录 `.env.example`（compose 部署）、`backend/.env.example`（本地开发）。依赖唯一权威是 `backend/pyproject.toml`（uv.lock 与其同步）。
 
 ## 脚本
 
@@ -59,7 +62,7 @@ memory/           # Agent 本地记忆（不入 git）
 
 ## 测试
 
-16 个 pytest 文件，覆盖 auth、数据源、importer、registry、universe、指标、市场状态（features/reduce/clustering/classifier/evaluation/persist/pipeline）、models。异步模式用 `pytest-asyncio`。
+18 个 pytest 文件 131 用例，覆盖 auth（含路由保护矩阵）、数据源、importer、registry、universe、指标（含 /all 实时路径回归）、市场状态（features/reduce/clustering/classifier/evaluation/persist/pipeline）、models。异步模式用 `pytest-asyncio`；conftest 强制内存 SQLite，测试不触生产 RDS。
 
 ## 本地记忆（不入 git）
 
