@@ -4,7 +4,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+# npm ci: 按 package-lock.json 确定性安装 (npm install 会浮动解析依赖)
+RUN npm ci
 
 COPY . .
 RUN npm run build

@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    database_url: str = "mysql+asyncmy://root:password@127.0.0.1:3306/quantpilot"
+    database_url: str = "mysql+aiomysql://root:password@127.0.0.1:3306/stockdb"
     host: str = "0.0.0.0"
     port: int = 8000
 

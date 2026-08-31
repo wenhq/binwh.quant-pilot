@@ -7,7 +7,12 @@ dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.6",
     "sqlalchemy>=2.0.35",
-    "asyncmy>=0.2.9",
+    # 纯 Python 免编译的 MySQL 异步驱动，与 backend/.env 运行时 mysql+aiomysql:// 一致
+    # （替代从未真正用上的 asyncmy，容器内无需 Cython/编译器）
+    "aiomysql>=0.3.2",
+    # zoneinfo("Asia/Shanghai") 的时区数据源：Windows 开发机与 python:*-slim 容器镜像
+    # 无系统 tzdata 时由该包兜底，保证调度器时区计算可解析
+    "tzdata>=2024.1",
     "pydantic-settings>=2.5.2",
     "akshare>=1.14.0",
     "pandas>=2.0.0",
@@ -20,7 +25,8 @@ dependencies = [
     # auth (httpOnly cookie + refresh token)
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
-    "bcrypt>=4.0.1,<5.0",
+    # 钉在 4.0.x：bcrypt 4.1+ 移除 __about__ 模块，passlib 1.7.4 读取版本号会报错
+    "bcrypt>=4.0.1,<4.1",
 ]
 
 [dependency-groups]

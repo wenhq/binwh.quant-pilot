@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 from sqlalchemy import delete, func, select
@@ -17,23 +18,40 @@ from app.services.indicators import adjust, macd, rsi, bollinger, keltner, atr
 
 logger = logging.getLogger(__name__)
 
-# 上海时区偏移 (UTC+8)
-_SH_TZ_OFFSET = timedelta(hours=8)
-_SYNC_HOUR = 15
-_SYNC_MINUTE = 5
-_RETRY_INTERVAL = timedelta(minutes=30)
+# 上海时区显式 localize：算法与宿主机/容器的系统时区彻底解耦（TZ 设不设都正确），
+# 时区数据由 tzdata 包保障（pyproject 已声明）
+_SH_TZ = ZoneInfo("Asia/Shanghai")
 
 
-def _next_sync_shanghai(now: datetime) -> datetime:
-    """计算下一个同步时间 (上海时间 15:05)."""
-    sh_now = now + _SH_TZ_OFFSET
-    target = datetime.combine(sh_now.date(), time(_SYNC_HOUR, _SYNC_MINUTE))
-    if sh_now.time() >= time(_SYNC_HOUR, _SYNC_MINUTE):
+def _next_sync_shanghai(now: datetime | None = None) -> datetime:
+    """计算下一次同步时刻 (上海时间 market_sync_hour:market_sync_minute, 跳过周末).
+
+    返回 UTC aware datetime，调用方用 aware UTC 做差值即可精确 sleep，
+    不再依赖系统时区恰为 UTC（旧实现 naive + timedelta(hours=8) 在 TZ=+8 的
+    Windows 开发机上会偏移 8 小时）。
+
+    参数: 任意时区的 aware datetime；naive 按 UTC 解释；None 取当前 UTC 时刻。
+    """
+    sync_time = time(settings.market_sync_hour, settings.market_sync_minute)
+    if now is None:
+        now = datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+
+    sh_now = now.astimezone(_SH_TZ)
+    target = sh_now.replace(
+        hour=sync_time.hour,
+        minute=sync_time.minute,
+        second=0,
+        microsecond=0,
+    )
+    # 已过今日触发点 (含整点) → 顺延到明天
+    if target <= sh_now:
         target += timedelta(days=1)
-    # 跳过周末
+    # 跳过周末 (按上海日历)
     while target.weekday() >= 5:
         target += timedelta(days=1)
-    return target - _SH_TZ_OFFSET
+    return target.astimezone(timezone.utc)
 
 
 # ----- 指标计算 -----
@@ -303,10 +321,10 @@ async def _run_daily_sync() -> None:
 
 
 async def _scheduler_loop() -> None:
-    """后台任务: 每个交易日上海时间 15:05 执行同步."""
+    """后台任务: 每个交易日上海时间 15:05 执行同步 (小时/分钟/重试间隔读 settings)."""
     logger.info("Scheduler loop started")
     while True:
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         next_sync = _next_sync_shanghai(now)
         wait_seconds = (next_sync - now).total_seconds()
         logger.info("Next sync scheduled at %s (in %.1f hours)", next_sync, wait_seconds / 3600)
@@ -318,8 +336,9 @@ async def _scheduler_loop() -> None:
             logger.info("Scheduler loop cancelled")
             break
         except Exception as e:
-            logger.error("Sync failed: %s. Retrying in %s", e, _RETRY_INTERVAL)
-            await asyncio.sleep(_RETRY_INTERVAL.total_seconds())
+            retry_delta = timedelta(minutes=settings.market_sync_retry_minutes)
+            logger.error("Sync failed: %s. Retrying in %s", e, retry_delta)
+            await asyncio.sleep(retry_delta.total_seconds())
 
 
 _scheduler_task: asyncio.Task | None = None

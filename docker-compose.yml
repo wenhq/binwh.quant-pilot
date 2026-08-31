@@ -1,21 +1,7 @@
+# QuantPilot 单机 http 部署: frontend(nginx) + backend(FastAPI) 两容器, MySQL 走远程阿里云 RDS, 不入库容器。
+# 凭据一律放仓库根目录 .env（复制 .env.example 填写），compose 启动时插值注入；
+# ${VAR:?err} 写法：变量缺失或为空时直接拒绝启动，杜绝带着空密钥把服务拉起来。
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: quantpilot-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: quantpilot
-      MYSQL_DATABASE: quantpilot
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
   backend:
     build:
       context: ./backend
@@ -23,16 +9,25 @@ services:
     container_name: quantpilot-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+asyncmy://root:quantpilot@mysql:3306/quantpilot
-      GS_API_KEY: ""
-      GS_API_BASE: "https://dgzt.guosen.com.cn/skills"
-    ports:
-      - "8000:8000"
-    depends_on:
-      mysql:
-        condition: service_healthy
-    volumes:
-      - ./backend:/app
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      GS_API_KEY: ${GS_API_KEY:-}
+      GS_API_BASE: ${GS_API_BASE:-https://dgzt.guosen.com.cn/skills}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      TZ: Asia/Shanghai
+    # 仅在 compose 网络内声明，不做宿主机端口映射：API 只经 frontend nginx 反代访问
+    expose:
+      - "8000"
+    # SIGTERM 后给 uvicorn 30s 优雅停机（lifespan shutdown 里 stop_scheduler）
+    stop_grace_period: 30s
+    healthcheck:
+      # slim 镜像无 curl/wget，用 python 标准库探活 /api/health
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
@@ -41,9 +36,41 @@ services:
     container_name: quantpilot-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      # 只绑回环，避免 80 直接暴露公网；如需局域网/公网访问：
+      #   - 改成 "80:80"，或
+      #   - 前置 SLB/反向代理回源 127.0.0.1:80
+      - "127.0.0.1:80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      # nginx:alpine 自带 busybox wget
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 可选本地 MySQL，默认不启动；直连 RDS 时忽略本服务。
+  # 启用：在 .env 里设 MYSQL_ROOT_PASSWORD 并把 DATABASE_URL 指向
+  #   mysql+aiomysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/quantpilot?charset=utf8mb4
+  # 然后：docker compose --profile local-db up -d
+  mysql:
+    image: mysql:8.0
+    container_name: quantpilot-mysql
+    profiles: ["local-db"]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: quantpilot
+    # 不做宿主机端口映射：只允许 compose 网络内的 backend 访问
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   mysql_data:

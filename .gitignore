@@ -10,6 +10,7 @@ venv/
 # (uv.lock IS committed; venv is not)
 
 # Env / secrets
+# /.env: 根目录部署凭据 (docker compose 插值用); backend/.env: 后端本地开发
 .env
 .env.*
 !.env.example

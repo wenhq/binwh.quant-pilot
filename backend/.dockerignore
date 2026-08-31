@@ -1,20 +1,22 @@
+# 构建上下文瘦身：backend/.venv 有上 GB，不排除会拖垮 docker build 的上下文上传；
+# 同时保证密钥永不进入镜像层
 .venv/
+venv/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 密钥与本地环境文件（compose 从根 .env 插值注入，不进镜像）
 .env
 .env.*
-!.env.example
+
+# 非运行时所需：迁移/脚本/测试/日志/锁文件
+alembic/
+scripts/
+tests/
 import_log.txt
 import_err.txt
-*.db
-.git/
-.gitignore
-.dockerignore
+uv.lock
+requirements.txt

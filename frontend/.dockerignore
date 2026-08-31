@@ -1,5 +1,11 @@
+# 依赖装在镜像内（npm ci），本地 node_modules 不进构建上下文
 node_modules/
 dist/
-.git/
-.gitignore
+
+# 密钥与本地环境文件
+.env
+.env.*
+
+# 不参与构建产物
+Dockerfile
 .dockerignore
