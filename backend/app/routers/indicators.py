@@ -20,7 +20,7 @@ from app.models import (
     Stock,
     StockDailyKline,
 )
-from app.services.indicators import adjust, macd, rsi, bollinger
+from app.services.indicators import adjust, atr, bollinger, keltner, macd, rsi
 
 logger = logging.getLogger(__name__)
 
