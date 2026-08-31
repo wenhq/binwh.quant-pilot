@@ -9,13 +9,21 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 
+from app.core.dependencies import get_current_user
 from app.database import AsyncSessionLocal
 from app.models import RegimeRun, RegimeState
 
-router = APIRouter(prefix="/market_regime", tags=["market_regime"])
+# Router-level auth: training (POST) and history queries (GET) all require login.
+# Note: the hmmlearn pipeline imports stay lazy inside the handlers — the
+# dependency only guards the HTTP layer and does not affect optional loading.
+router = APIRouter(
+    prefix="/market_regime",
+    tags=["market_regime"],
+    dependencies=[Depends(get_current_user)],
+)
 _bg_tasks: dict[str, asyncio.Task] = {}
 
 

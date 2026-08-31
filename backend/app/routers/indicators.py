@@ -6,9 +6,10 @@ from datetime import date
 from typing import Any
 
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, func, select
 
+from app.core.dependencies import get_current_user
 from app.database import AsyncSessionLocal
 from app.models import (
     Etf,
@@ -23,7 +24,12 @@ from app.services.indicators import adjust, macd, rsi, bollinger
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/indicators", tags=["indicators"])
+# Router-level auth: all indicator endpoints require login.
+router = APIRouter(
+    prefix="/indicators",
+    tags=["indicators"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 async def _load_klines(

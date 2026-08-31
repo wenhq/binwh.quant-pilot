@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 
+    # HTTP security
+    # 生产环境（HTTPS）必须设为 true，否则浏览器拒绝设置/回传 cookie
+    cookie_secure: bool = False
+    # 逗号分隔的前端 origin 列表；allow_credentials=True 时不能用通配符 *
+    cors_origins: str = "http://localhost:5173"
+
     # Guosen secondary data source (限免, may stop working).
     gs_api_key: str | None = None
     gs_api_base: str = "https://dgzt.guosen.com.cn/skills"
@@ -35,6 +41,11 @@ class Settings(BaseSettings):
     market_sync_retry_minutes: int = 30
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """CORSMiddleware 用的 origin 列表（cors_origins 支持逗号分隔）."""
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 settings = Settings()

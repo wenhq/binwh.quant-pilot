@@ -1,6 +1,7 @@
 from fastapi import HTTPException, Request, status
 
 from app.models.user import User
+from app.services.auth.config import ACCESS_TOKEN_COOKIE
 from app.services.auth.security import decode_token
 from sqlalchemy import select
 
@@ -8,7 +9,7 @@ from app.database import AsyncSessionLocal
 
 
 async def get_current_user(request: Request) -> User:
-    token = request.cookies.get("access_token")
+    token = request.cookies.get(ACCESS_TOKEN_COOKIE)
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未认证")
     try:

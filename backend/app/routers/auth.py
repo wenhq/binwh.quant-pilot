@@ -26,7 +26,7 @@ def _set_cookie(response: Response, key: str, value: str, max_age_seconds: int) 
         value=value,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=settings.cookie_secure,
         max_age=max_age_seconds,
     )
 

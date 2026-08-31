@@ -1,16 +1,22 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.dependencies import get_current_user
 from app.database import get_db, AsyncSessionLocal
 from app.models import Stock, StockDailyKline, Index, IndexDailyKline, Etf, EtfDailyKline
 from app.services.data.akshare_client import fetch_stock_daily, fetch_stock_info
 from app.services.data.normalizer import normalize_daily
 
-router = APIRouter(prefix="/data", tags=["data"])
+# Router-level auth: every /data endpoint (incl. sync/import writes) requires login.
+router = APIRouter(
+    prefix="/data",
+    tags=["data"],
+    dependencies=[Depends(get_current_user)],
+)
 _executor = ThreadPoolExecutor(max_workers=2)
 
 
