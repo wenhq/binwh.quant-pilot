@@ -7,7 +7,10 @@ __pycache__/
 venv/
 
 # uv
-# (uv.lock IS committed; venv is not)
+# uv.lock 不入库: 本机 uv 配置了清华镜像, 每次 lock 都会改写全部源 URL,
+# 提交会污染协作者/CI 的 lockfile。版本 pin 由 pyproject.toml 约束。
+uv.lock
+backend/uv.lock
 
 # Env / secrets
 # /.env: 根目录部署凭据 (docker compose 插值用); backend/.env: 后端本地开发

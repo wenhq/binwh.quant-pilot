@@ -12,7 +12,7 @@ onMounted(() => {
 })
 
 if (isLoggedIn.value && route.path === '/login') {
-  router.push('/#/')
+  router.push('/')
 }
 </script>
 

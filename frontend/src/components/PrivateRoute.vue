@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Layout, Button, message } from 'ant-design-vue'
+import { Layout, message } from 'ant-design-vue'
 import {
   DashboardOutlined,
   FundOutlined,
@@ -37,7 +37,7 @@ onMounted(() => {
 async function handleLogout() {
   await logout()
   message.success('已退出登录')
-  router.push('/#/login')
+  router.push('/login')
 }
 
 function handleMenuClick(e: any) {
@@ -106,7 +106,7 @@ function handleMenuClick(e: any) {
   <template v-else>
     <a-result status="403" title="未授权" sub-title="请先登录">
       <template #extra>
-        <a-button type="primary" @click="router.push('/#/login')">去登录</a-button>
+        <a-button type="primary" @click="router.push('/login')">去登录</a-button>
       </template>
     </a-result>
   </template>

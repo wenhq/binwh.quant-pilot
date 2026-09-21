@@ -18,7 +18,7 @@ async function handleLogin() {
   try {
     const data = await login(formData.value.username, formData.value.password)
     message.success('登录成功')
-    router.push('/#/')
+    router.push('/')
   } catch (e: any) {
     message.error(e?.response?.data?.detail || '登录失败')
   } finally {
@@ -41,7 +41,7 @@ async function handleLogin() {
           <a-button type="primary" html-type="submit" :loading="loading" block size="large">登录</a-button>
         </a-form-item>
         <div class="register-link">
-          还没有账号？<a href="/#/register">立即注册</a>
+          还没有账号？<RouterLink to="/register">立即注册</RouterLink>
         </div>
       </a-form>
     </a-card>

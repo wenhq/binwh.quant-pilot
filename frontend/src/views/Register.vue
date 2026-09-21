@@ -21,7 +21,7 @@ async function handleRegister() {
   try {
     await register(formData.value.username, formData.value.password)
     message.success('注册成功，请登录')
-    router.push('/#/login')
+    router.push('/login')
   } catch (e: any) {
     message.error(e?.response?.data?.detail || '注册失败')
   } finally {
@@ -47,7 +47,7 @@ async function handleRegister() {
           <a-button type="primary" html-type="submit" :loading="loading" block size="large">注册</a-button>
         </a-form-item>
         <div class="login-link">
-          已有账号？<a href="/#/login">立即登录</a>
+          已有账号？<RouterLink to="/login">立即登录</RouterLink>
         </div>
       </a-form>
     </a-card>
